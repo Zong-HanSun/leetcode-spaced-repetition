@@ -3,11 +3,11 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 
 from models import Problem, Review
-from storage import get_all_problems, get_all_reviews, save_review
+from storage import get_all_problems, get_all_reviews, save_review, save_problem
 from datetime import date
 from tracker import get_due_problems
 
-from schemas import ReviewCreate
+from schemas import ReviewCreate, ProblemCreate
 
 import sqlite3
 
@@ -52,3 +52,24 @@ def create_review(submission: ReviewCreate) -> Review:
         raise
 
     return review
+
+@app.post("/problems", response_model=Problem, status_code=201)
+def create_problem(submission: ProblemCreate) -> Problem:
+    problem = Problem(number=submission.number,
+                      name=submission.name,
+                      difficulty=submission.difficulty,
+                      topic=submission.topic,
+                      notes=submission.notes)
+    
+    try:
+        save_problem(DATABASE_PATH, problem)
+        
+    except sqlite3.IntegrityError as error:
+        if error.sqlite_errorcode == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
+            raise HTTPException(
+                status_code=409,
+                detail="Problem already exists",
+            ) from error
+        raise
+    
+    return problem

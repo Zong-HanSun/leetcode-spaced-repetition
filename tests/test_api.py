@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 import main
 from models import Problem, Review
 from datetime import date
-from storage import initialize_database, save_problem, get_all_reviews
+from storage import initialize_database, save_problem, get_all_reviews, get_all_problems
 
 
 def test_post_review_saves_valid_attempt(tmp_path, monkeypatch):
@@ -32,6 +32,72 @@ def test_post_review_saves_valid_attempt(tmp_path, monkeypatch):
 
     assert response.status_code == 201
     assert response.json() == payload
-    assert get_all_reviews(database_path) == [Review(problem_number=1,
-                                                    reviewed_on=date(2026, 9, 20),
-                                                    mastery_level="Solved Independently")]
+    assert get_all_reviews(database_path) == [
+        Review(
+            problem_number=1,
+            reviewed_on=date(2026, 9, 20),
+            mastery_level="Solved Independently",
+        )
+    ]
+
+
+def test_post_problem_saves_valid_problem(tmp_path, monkeypatch):
+    database_path = str(tmp_path / "test.db")
+    initialize_database(database_path)
+    monkeypatch.setattr(main, "DATABASE_PATH", database_path)
+
+    payload = {
+        "number": 1,
+        "name": " Two Sum ",
+        "difficulty": "Easy",
+        "topic": "Arrays & Hashing"
+    }
+    
+    expected = {
+            "number": 1,
+            "name": "Two Sum",
+            "difficulty": "Easy",
+            "topic": "Arrays & Hashing",
+            "notes": ""
+        }
+
+    with TestClient(main.app) as client:
+        response = client.post("/problems", json=payload)
+
+    assert response.status_code == 201
+    assert response.json() == expected
+    assert get_all_problems(database_path) == [Problem(
+        number=1,
+        name="Two Sum",
+        difficulty="Easy",
+        topic="Arrays & Hashing",
+        notes=""
+    )]
+    
+def test_post_duplicate_problem_returns_conflict(tmp_path, monkeypatch):
+    database_path = str(tmp_path / "test.db")
+    initialize_database(database_path)
+    monkeypatch.setattr(main, "DATABASE_PATH", database_path)
+
+    payload = {
+        "number": 1,
+        "name": " Two Sum ",
+        "difficulty": "Easy",
+        "topic": "Arrays & Hashing"
+    }
+    
+    
+    with TestClient(main.app) as client:
+        first_response = client.post("/problems", json=payload)
+        second_response = client.post("/problems", json=payload)
+        
+    assert first_response.status_code == 201
+    assert second_response.status_code == 409
+    assert second_response.json() == {"detail": "Problem already exists"}
+    assert get_all_problems(database_path) == [Problem(
+        number=1,
+        name="Two Sum",
+        difficulty="Easy",
+        topic="Arrays & Hashing",
+        notes=""
+    )]
