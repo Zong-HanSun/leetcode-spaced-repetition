@@ -101,3 +101,19 @@ def test_post_duplicate_problem_returns_conflict(tmp_path, monkeypatch):
         topic="Arrays & Hashing",
         notes=""
     )]
+    
+def test_startup_initializes_database(tmp_path, monkeypatch):
+    database_path = tmp_path / "test.db"
+    monkeypatch.setattr(main, "DATABASE_PATH", str(database_path))
+
+    assert not database_path.exists()
+
+    with TestClient(main.app) as client:
+        problems_response = client.get("/problems")
+        reviews_response = client.get("/reviews")
+
+    assert database_path.exists()
+    assert problems_response.status_code == 200
+    assert problems_response.json() == []
+    assert reviews_response.status_code == 200
+    assert reviews_response.json() == []

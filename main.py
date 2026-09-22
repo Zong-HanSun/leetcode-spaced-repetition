@@ -3,17 +3,25 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 
 from models import Problem, Review
-from storage import get_all_problems, get_all_reviews, save_review, save_problem
+from storage import get_all_problems, get_all_reviews, save_review, save_problem, initialize_database
 from datetime import date
 from tracker import get_due_problems
 
 from schemas import ReviewCreate, ProblemCreate
+from contextlib import asynccontextmanager
 
 import sqlite3
 
-app = FastAPI()
-
 DATABASE_PATH = str(Path(__file__).resolve().parent / "tracker.db")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_database(DATABASE_PATH)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/problems", response_model=list[Problem])

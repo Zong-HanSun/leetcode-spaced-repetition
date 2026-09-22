@@ -8,9 +8,40 @@ and create a tool I will use for reviewing LeetCode problems.
 ## Current functionality
 - Calculate the next review date from a manually selected mastery level.
 - Schedule reviews relative to the actual completion date.
+- Problems and reviews are now stored in SQLite
+- The Api can create problems, record attempts, and retrieve due problems
+- Request validation and automated tests exist
 
 ## Planned functionality
-- Store problems and review history.
-- Display overdue and upcoming reviews.
-- Record pattern notes.
-- Provide a web interface.
+- Build a web interface for managing problems and recording reviews.
+- Randomly select a due problem, with options to hide its topic,
+  name, and difficulty + from specific curated list if user want(nc 250/150, blind 75/grind 75 etc.)
+- Support archiving and restoring problems.
+- Explore automatic archiving based on repeated mastered attempts
+  and problem difficulty.
+
+## Local setup
+
+Developed with Python 3.14.
+
+From the project folder:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+fastapi dev main.py
+```
+
+The activation command above is for macOS/Linux.
+
+Open http://127.0.0.1:8000/docs to explore the API.
+The SQLite database is created automatically on startup.
+
+## Running tests
+
+With the virtual environment active:
+
+```bash
+python -m pytest
+```
